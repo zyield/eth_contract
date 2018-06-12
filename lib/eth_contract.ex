@@ -143,6 +143,10 @@ defmodule EthContract do
     "0x" <> address 
   end
 
+  defp bytes_to_int("0x") do
+    0
+  end
+
   defp bytes_to_int(hex) do
     hex
     |> String.slice(2..-1)
