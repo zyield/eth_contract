@@ -106,9 +106,7 @@ defmodule EthContract do
   """
 
   def parse_abi(file_path) do
-    file = File.read(Path.join(System.cwd(), file_path))
-    
-    case file do
+    case File.read(file_path) do
       {:ok, abi } -> Poison.Parser.parse!(abi)
                     |> Enum.map(fn x -> {x["name"], x} end)
                     |> Enum.into(%{})
