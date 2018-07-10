@@ -174,7 +174,6 @@ defmodule EthContract do
     indexed     = Enum.reject(abi[method]["inputs"], fn x -> x["indexed"] == false end)
 
     output_types_no_index = Enum.map(not_indexed, fn x -> x["type"] end) # ["uint256"]
-    output_types          = Enum.map(indexed, fn x -> x["type"] end) # ["address", "address"]
 
     types_signature   = Enum.join(["(", Enum.join(output_types_no_index, ","), ")"])
     output_signature  = "#{method}(#{types_signature})"
@@ -203,8 +202,8 @@ defmodule EthContract do
         |> List.first
         |> Base.encode16(case: :lower)
 
-        case type do
-          :address -> decoded = "0x" <> decoded
+        decoded = case type do
+          :address -> "0x" <> decoded
         end
 
         {map["name"], decoded}
