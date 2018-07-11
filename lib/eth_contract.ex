@@ -47,7 +47,6 @@ defmodule EthContract do
     |> decode_address
   end
 
-
   @doc """
   Get the balance given a wallet address. This was tested against ERC20 and ERC721 standard contracts.
 
@@ -67,7 +66,6 @@ defmodule EthContract do
     |> bytes_to_int
   end
 
-
   @doc """
   Get the total supply given a contract address. This was tested against ERC20 and ERC721 standard contracts.
 
@@ -75,6 +73,7 @@ defmodule EthContract do
 
       iex> EthContract.total_supply(%{contract: '0x234'})
       :ok
+
   """
   def total_supply(%{contract: contract}) do
     {:ok, total_supply } = @json_rpc_client.eth_call(%{
@@ -85,7 +84,6 @@ defmodule EthContract do
     total_supply
     |> bytes_to_int
   end
-
 
   @doc """
   ERC721 Meta. This will return a Map with the meta information associated with a token. You have to provide the name of the method to use (ie. CryptoKitties uses getKitty)
@@ -106,6 +104,7 @@ defmodule EthContract do
         "sireId" => 0,
         "siringWithId" => 0
       }
+
   """
   def meta(%{token_id: token_id, method: method, contract: contract, abi: abi}) do
     {:ok, meta } = @json_rpc_client.eth_call(%{
@@ -117,7 +116,6 @@ defmodule EthContract do
     |> decode_data(abi, method, "outputs")
   end
 
-
   # Taken from https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L159
   @doc """
   Parses abi into a map.
@@ -126,8 +124,8 @@ defmodule EthContract do
 
       iex> abi = EthContract.parse_abi("test/support/crypto_kitties.json")
       %{}
-  """
 
+  """
   def parse_abi(file_path) do
     case File.read(file_path) do
       {:ok, abi } -> Poison.Parser.parse!(abi)
@@ -159,7 +157,6 @@ defmodule EthContract do
   Decodes non-indexed data
 
   """
-
   def decode_data(data, abi, method, signatures_key \\ "inputs") do
     trimmed_output  = trim_data(data)
 
@@ -185,13 +182,10 @@ defmodule EthContract do
     |> Enum.into(%{})
   end
 
-
-
   @doc """
   Decodes logs if indexed, if not - passes down to `decode_data`
 
   """
-
   # This log is indexed
   # Take the signatures of the inputs that are not indexed => decode those as before
   # Take the data that is indexed and decode that separately
