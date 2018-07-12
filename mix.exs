@@ -45,7 +45,6 @@ defmodule EthContract.MixProject do
   defp deps do
     [
       {:ethereumex, "~> 0.3.2"},
-      {:hexate,  ">= 0.6.0"},
       {:abi, "~> 0.1.8"},
       {:ex_doc, "~> 0.14", only: :dev}
     ]
