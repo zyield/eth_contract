@@ -44,6 +44,7 @@ defmodule EthContract do
     })
 
     address
+    |> String.slice(2..-1)
     |> decode_address
   end
 
@@ -118,7 +119,7 @@ defmodule EthContract do
 
   # Taken from https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L159
   @doc """
-  Parses abi into a map.
+  Parses abi into a map with the name of the method as key.
 
   ## Examples
 
@@ -154,7 +155,7 @@ defmodule EthContract do
   end
 
   @doc """
-  Decodes non-indexed data
+  Decodes general smart contract calls
 
   """
   def decode_data(data, abi, method, signatures_key \\ "inputs") do
@@ -183,12 +184,9 @@ defmodule EthContract do
   end
 
   @doc """
-  Decodes logs if indexed, if not - passes down to `decode_data`
+  Decodes events that have indexed elements. 
 
   """
-  # This log is indexed
-  # Take the signatures of the inputs that are not indexed => decode those as before
-  # Take the data that is indexed and decode that separately
   def decode_log(data, topics, abi, method) when Kernel.length(topics) > 1 do
     trimmed_data = trim_data(data)
 
@@ -237,7 +235,10 @@ defmodule EthContract do
     Map.merge(indexed_result, non_indexed_result)
   end
 
-  # This log in not indexed
+  @doc """
+  Decodes events with no indexes.
+
+  """
   def decode_log(data, _topics, abi, method) do
     decode_data(data, abi, method)
   end

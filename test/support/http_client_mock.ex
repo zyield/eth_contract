@@ -13,7 +13,7 @@ defmodule EthContract.HttpClientMock do
   end
 
   defp owner_of do
-    "00000000000000000000000079bd592415ff6c91cfe69a7f9cd091354fc65a18"
+    "0x00000000000000000000000079bd592415ff6c91cfe69a7f9cd091354fc65a18"
   end
 
   defp balance_of do
