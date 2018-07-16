@@ -4,9 +4,11 @@ defmodule EthContract.HttpClientMock do
   @address "0xC0BB964A7e51393e7F89c5513eAadbE5208Dec89"
 
   def eth_call(%{ to: _to, data: data }) do
+    {:ok, balance_of_sig } = balance_of_hex(@address)
+
     cond do
       data == "0x" <> owner_of_hex(1)             -> {:ok, owner_of() }
-      data == "0x" <> balance_of_hex(@address)    -> {:ok, "0x" <> balance_of() }
+      data == "0x" <> balance_of_sig              -> {:ok, "0x" <> balance_of() }
       data == "0x" <> total_supply_hex()          -> {:ok, total_supply() }
       data == "0x" <> meta_for_hex(1, "getKitty") -> {:ok, meta()}
     end

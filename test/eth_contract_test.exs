@@ -57,7 +57,7 @@ defmodule EthContractTest do
 
   describe "balance_of/1" do
     test "it returns the balance_of for address" do
-      balance = EthContract.balance_of(%{ address: "0xC0BB964A7e51393e7F89c5513eAadbE5208Dec89", contract: "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d" })
+      {:ok, balance } = EthContract.balance_of(%{ address: "0xC0BB964A7e51393e7F89c5513eAadbE5208Dec89", contract: "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d" })
       assert balance == 3
     end
   end

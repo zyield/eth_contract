@@ -58,13 +58,19 @@ defmodule EthContract do
 
   """
   def balance_of(%{address: address, contract: contract}) do
-    {:ok, balance } = @json_rpc_client.eth_call(%{
-      data: "0x" <> balance_of_hex(address),
-      to: contract
-    })
-
-    balance
-    |> bytes_to_int
+    case balance_of_hex(address) do
+      {:error, message } -> {:error, message }
+      {:ok, signature } ->
+        case @json_rpc_client.eth_call(%{
+          data: "0x" <> signature,
+          to: contract
+        }) do
+          {:ok, balance } ->
+            {:ok, balance |> bytes_to_int }
+          {:error, message } -> 
+            {:error, message }
+        end
+    end
   end
 
   @doc """

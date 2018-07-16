@@ -10,16 +10,25 @@ defmodule EthContract.Util do
   end
 
   def balance_of_hex(address) do
-    {:ok, address } = address_to_bytes(address)
-
-    ABI.encode("balanceOf(address)", [address])      
-    |> Base.encode16(case: :lower)
+    case address_to_bytes(address) do
+      {:ok, address } ->
+        case ABI.encode("balanceOf(address)", [address]) |> Base.encode16(case: :lower) do
+          signature -> 
+            {:ok, signature}
+          {:error, _ } -> { :error, "Error decoding data" }
+        end
+       {:error, message } -> { :error, message }
+    end
   end
 
   def address_to_bytes(address) do
-    address
-    |> String.slice(2..-1)
-    |> Base.decode16(case: :mixed)
+    address = address
+              |> String.slice(2..-1)
+
+    case Base.decode16(address, case: :mixed) do
+      {:ok, address } -> {:ok, address}
+      :error -> {:error, "Error converting address to bytes" }
+    end
   end
 
   def meta_for_hex(token_id, method) do
