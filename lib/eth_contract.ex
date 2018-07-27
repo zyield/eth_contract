@@ -10,8 +10,8 @@ defmodule EthContract do
 
   @json_rpc_client Application.get_env(:eth_contract, :json_rpc_client) || HttpClient
 
-  @callback balance_of(map()) :: integer()
-  @callback owner_of(map()) :: any()
+  @callback balance_of(map()) :: map()
+  @callback owner_of(map()) :: map()
   @callback meta(map()) :: map()
   @callback parse_abi(file_path :: String.t()) :: map()
   @callback decode_data(
@@ -26,7 +26,7 @@ defmodule EthContract do
     abi :: String.t(),
     method :: String.t()
   ) :: map()
-  @callback total_supply(map()) :: integer()
+  @callback total_supply(map()) :: map()
 
   @doc """
   Get the wallet address given a contract and a token id
@@ -38,14 +38,15 @@ defmodule EthContract do
 
   """
   def owner_of(%{token_id: token_id, contract: contract}) do
-    {:ok, address } = @json_rpc_client.eth_call(%{
-      data: "0x" <> owner_of_hex(token_id),
-      to: contract
-    })
-
-    address
-    |> String.slice(2..-1)
-    |> decode_address
+    with {:ok, address } <- @json_rpc_client.eth_call(%{ data: "0x" <> owner_of_hex(token_id), to: contract }) do
+      with {:ok, address } <- address |> String.slice(2..-1) |> decode_address do
+        {:ok, address}
+      else
+        err -> { :error, err }
+      end
+    else
+      err -> { :error, err }
+    end
   end
 
   @doc """
@@ -58,18 +59,14 @@ defmodule EthContract do
 
   """
   def balance_of(%{address: address, contract: contract}) do
-    case balance_of_hex(address) do
-      {:error, message } -> {:error, message }
-      {:ok, signature } ->
-        case @json_rpc_client.eth_call(%{
-          data: "0x" <> signature,
-          to: contract
-        }) do
-          {:ok, balance } ->
-            {:ok, balance |> bytes_to_int }
-          {:error, message } -> 
-            {:error, message }
-        end
+    with {:ok, signature } <- balance_of_hex(address) do
+      with {:ok, balance } <- @json_rpc_client.eth_call(%{ data: "0x" <> signature, to: contract }) do
+        {:ok, balance |> bytes_to_int }
+      else
+        err -> {:error, err }
+      end 
+    else
+      err -> {:error, err }
     end
   end
 
@@ -83,13 +80,11 @@ defmodule EthContract do
 
   """
   def total_supply(%{contract: contract}) do
-    {:ok, total_supply } = @json_rpc_client.eth_call(%{
-      data: "0x" <> total_supply_hex(),
-      to: contract
-    })
-
-    total_supply
-    |> bytes_to_int
+    with {:ok, total_supply } <- @json_rpc_client.eth_call(%{ data: "0x" <> total_supply_hex(), to: contract}) do
+      {:ok, total_supply |> bytes_to_int }
+    else
+      err -> {:error, err }
+    end
   end
 
   @doc """
@@ -114,13 +109,22 @@ defmodule EthContract do
 
   """
   def meta(%{token_id: token_id, method: method, contract: contract, abi: abi}) do
-    {:ok, meta } = @json_rpc_client.eth_call(%{
-      data: "0x" <> meta_for_hex(token_id, method),
-      to: contract
-    })
 
-    meta
-    |> decode_data(abi, method, "outputs")
+    with {:ok, meta } <- @json_rpc_client.eth_call(%{ data: "0x" <> meta_for_hex(token_id, method), to: contract }) do
+      case meta do
+        "0x" ->
+          {:error, nil }
+        meta ->
+          with {:ok, output } <- decode_data(meta, abi, method, "outputs") do
+            {:ok, output } 
+          else
+            err -> {:error, err}
+          end
+      end
+    else
+      err -> {:error, err }
+    end
+
   end
 
   # Taken from https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L159
@@ -164,7 +168,12 @@ defmodule EthContract do
   Decodes general smart contract calls
 
   """
-  def decode_data(data, abi, method, signatures_key \\ "inputs") do
+
+  def decode_data(data, abi, method, signatures_key \\ "inputs")
+  def decode_data("0x", _abi, _method, _signatures_key) do
+    {:error, %{}}
+  end
+  def decode_data(data, abi, method, signatures_key) do
     trimmed_output  = trim_data(data)
 
     %{ output_signature: output_signature, output_names: output_names } = output_signature(abi, method, signatures_key)
@@ -175,7 +184,7 @@ defmodule EthContract do
       |> Tuple.to_list()
       |> Enum.map(&maybe_encode_binary/1)
 
-    combine_data(output_names, outputs)
+    {:ok, combine_data(output_names, outputs)}
   end
 
   defp maybe_encode_binary( << data :: binary>>) do
@@ -249,10 +258,15 @@ defmodule EthContract do
     decode_data(data, abi, method)
   end
 
+  defp decode_address("") do 
+    {:ok, "0x" } 
+  end
+
   defp decode_address(bytes) do
     {address, _} = TypeDecoder.decode_bytes(bytes, 40, :left)
-    "0x" <> address
+    {:ok, "0x" <> address }
   end
+
 
   defp bytes_to_int("0x") do
     0

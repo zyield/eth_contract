@@ -8,21 +8,60 @@ defmodule EthContractTest do
 
   describe "decode_log/4" do
     test "it returns the log data for non indexed event", %{ abi: abi } do
-      log_data = EthContract.decode_log("0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003b16ab6e23bdbeeab719d8e4c49d6367487625300000000000000000000000000000000000000000000000000000000000cc7f6", ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"], abi, "Transfer")
+      {:ok, log_data } = EthContract.decode_log("0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003b16ab6e23bdbeeab719d8e4c49d6367487625300000000000000000000000000000000000000000000000000000000000cc7f6", ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"], abi, "Transfer")
       assert log_data === %{"from" => "0x0000000000000000000000000000000000000000", "to" => "0x03b16ab6e23bdbeeab719d8e4c49d63674876253", "tokenId" => 837622}
+    end
+
+    test "it decode payload" do
+      abi = %{"Birth" => %{"anonymous" => false, "inputs" => [%{"indexed" => false, "name" => "owner", "type" => "address"}, %{"indexed" => false, "name" => "kittyId", "type" => "uint256"}, %{"indexed" => false, "name" => "matronId", "type" => "uint256"}, %{"indexed" => false, "name" => "sireId", "type" => "uint256"}, %{"indexed" => false, "name" => "genes", "type" => "uint256"}], "name" => "Birth", "type" => "event"}}
+      {:ok, log_data } = EthContract.decode_log("0x00000000000000000000000006012c8cf97bead5deae237070f9587f8e7a266d00000000000000000000000000000000000000000000000000000000000cf3c80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005a56b411ce01969730ee135ac794a3190622248f6a187534ca1082f03c64", ["0x0a5311bd2a6608f08a180df2ee7c5946819a649b204b554bb8e39825b2c50ad5"], abi, "Birth")
+      assert log_data ===  %{
+        "genes" => 623494690161459611489819703807996780065503703761012687510071662227766372,
+        "kittyId" => 848840,
+        "matronId" => 0,
+        "owner" => "0x06012c8cf97bead5deae237070f9587f8e7a266d",
+        "sireId" => 0
+      }
+    end
+
+    test "it returns the log data for non indexed event - Birth" do
+      abi = %{
+        "Birth" => %{
+          "anonymous" => false,
+          "inputs" => [
+            %{"indexed" => false, "name" => "owner", "type" => "address"},
+            %{"indexed" => false, "name" => "kittyId", "type" => "uint256"},
+            %{"indexed" => false, "name" => "matronId", "type" => "uint256"},
+            %{"indexed" => false, "name" => "sireId", "type" => "uint256"},
+            %{"indexed" => false, "name" => "genes", "type" => "uint256"}
+          ],
+          "name" => "Birth",
+          "type" => "event"
+        }
+      }
+
+      {:ok, log_data } = EthContract.decode_log("0x000000000000000000000000ca97a04e562a71d6fc95f335cb6adc5e07e2e8d800000000000000000000000000000000000000000000000000000000000cf31900000000000000000000000000000000000000000000000000000000000cf31000000000000000000000000000000000000000000000000000000000000aea3600005b16b094c770cc312cee71ae56854e588a300009095c11a9ab7bd52084f9", ["0x0a5311bd2a6608f08a180df2ee7c5946819a649b204b554bb8e39825b2c50ad5"], abi, "Birth")
+
+      assert log_data == %{
+        "genes" => 628670632552109618658954045183678035112166633548495867316966897081156857,
+        "kittyId" => 848665,
+        "matronId" => 848656,
+        "owner" => "0xca97a04e562a71d6fc95f335cb6adc5e07e2e8d8",
+        "sireId" => 715318
+      }
     end
 
     test "it returns the log data for indexed event" do
       indexed_abi = %{
         "Transfer" => %{
-            "anonymous" => false,
-            "inputs" => [
-                  %{"indexed" => true, "name" => "from", "type" => "address"},
-                  %{"indexed" => true, "name" => "to", "type" => "address"},
-                  %{"indexed" => false, "name" => "value", "type" => "uint256"}
-                ],
-            "name" => "Transfer",
-            "type" => "event"
+          "anonymous" => false,
+          "inputs" => [
+            %{"indexed" => true, "name" => "from", "type" => "address"},
+            %{"indexed" => true, "name" => "to", "type" => "address"},
+            %{"indexed" => false, "name" => "value", "type" => "uint256"}
+          ],
+          "name" => "Transfer",
+          "type" => "event"
         }
       }
 
@@ -34,14 +73,15 @@ defmodule EthContractTest do
 
   describe "meta/1" do
     test "it returns the meta information associated with a token id", %{ abi: abi } do
-      meta = EthContract.meta(%{ token_id: 1, method: "getKitty", contract: "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d", abi: abi})
+      {:ok, meta } = EthContract.meta(%{ token_id: 1, method: "getKitty", contract: "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d", abi: abi})
+
       assert meta === %{"birthTime" => 1511417999, "cooldownIndex" => 0, "generation" => 0, "genes" => 626837621154801616088980922659877168609154386318304496692374110716999053, "isGestating" => false, "isReady" => true, "matronId" => 0, "nextActionAt" => 0, "sireId" => 0, "siringWithId" => 0}
     end
   end
 
   describe "owner_of/1" do
     test "it successfully returns the owner of a token id" do
-      address = EthContract.owner_of(%{token_id: 1, contract: "0x06012c8cf97bead5deae237070f9587f8e7a266d"})
+      {:ok, address } = EthContract.owner_of(%{token_id: 1, contract: "0x06012c8cf97bead5deae237070f9587f8e7a266d"})
       assert address === "0x79bd592415ff6c91cfe69a7f9cd091354fc65a18" 
     end
   end
@@ -64,7 +104,7 @@ defmodule EthContractTest do
 
   describe "total_supply/1" do
     test "it returns the total supply method call" do
-      total_supply = EthContract.total_supply(%{ contract: "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d"})
+      {:ok, total_supply } = EthContract.total_supply(%{ contract: "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d"})
       assert total_supply === 837555
     end
   end
