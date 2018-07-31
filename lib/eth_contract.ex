@@ -109,20 +109,21 @@ defmodule EthContract do
 
   """
   def meta(%{token_id: token_id, method: method, contract: contract, abi: abi}) do
-
     with {:ok, meta } <- @json_rpc_client.eth_call(%{ data: "0x" <> meta_for_hex(token_id, method), to: contract }) do
       case meta do
         "0x" ->
-          {:error, nil }
+          {:error, "Meta is 0x" }
         meta ->
           with {:ok, output } <- decode_data(meta, abi, method, "outputs") do
             {:ok, output } 
           else
-            err -> {:error, err}
+            _err -> 
+              {:error, "Error in decode_data"}
           end
       end
     else
-      err -> {:error, err }
+      _err -> 
+        {:error, "Error in eth_call" }
     end
 
   end
@@ -247,7 +248,7 @@ defmodule EthContract do
     indexed_result = res
                      |> Enum.into(%{})
 
-    Map.merge(indexed_result, non_indexed_result)
+    {:ok, Map.merge(indexed_result, non_indexed_result) }
   end
 
   @doc """
