@@ -13,9 +13,9 @@ defmodule EthContract.Util do
     case address_to_bytes(address) do
       {:ok, address } ->
         case ABI.encode("balanceOf(address)", [address]) |> Base.encode16(case: :lower) do
+          {:error, _ } -> { :error, "Error decoding data" }
           signature -> 
             {:ok, signature}
-          {:error, _ } -> { :error, "Error decoding data" }
         end
        {:error, message } -> { :error, message }
     end
