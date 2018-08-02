@@ -76,13 +76,11 @@ defmodule EthContract do
 
   def account_balance(%{ address: address }) do
     with {:ok, balance } <- @json_rpc_client.eth_get_balance(address) do
-      balance_wei = 
-        balance 
-        |> String.slice(2..-1)
-        |> Base.decode16!(case: :lower)
-        |> :binary.decode_unsigned
-
-      {:ok, balance_wei }
+      with {balance, _ } <- balance |> String.slice(2..-1) |> Integer.parse(16) do 
+        {:ok, balance }
+      else
+        err -> {:error, err }
+      end
     else
       err ->
         {:error, err}
@@ -94,8 +92,8 @@ defmodule EthContract do
 
   ## Examples
 
-      iex> EthContract.total_supply(%{contract: '0x234'})
-      :ok
+  iex> EthContract.total_supply(%{contract: '0x234'})
+  :ok
 
   """
   def total_supply(%{contract: contract}) do
@@ -111,20 +109,20 @@ defmodule EthContract do
 
   ## Examples
 
-      iex> abi = EthContract.parse_abi("test/support/crypto_kitties.json")
-      iex> EthContract.meta(%{token_id: 45, method: "getKitty", contract: "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d", abi: abi})
-      %{
-        "birthTime" => 1511417999,
-        "cooldownIndex" => 0,
-        "generation" => 0,
-        "genes" => 626837621154801616088980922659877168609154386318304496692374110716999053,
-        "isGestating" => false,
-        "isReady" => true,
-        "matronId" => 0,
-        "nextActionAt" => 0,
-        "sireId" => 0,
-        "siringWithId" => 0
-      }
+  iex> abi = EthContract.parse_abi("test/support/crypto_kitties.json")
+  iex> EthContract.meta(%{token_id: 45, method: "getKitty", contract: "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d", abi: abi})
+  %{
+    "birthTime" => 1511417999,
+    "cooldownIndex" => 0,
+    "generation" => 0,
+    "genes" => 626837621154801616088980922659877168609154386318304496692374110716999053,
+    "isGestating" => false,
+    "isReady" => true,
+    "matronId" => 0,
+    "nextActionAt" => 0,
+    "sireId" => 0,
+    "siringWithId" => 0
+  }
 
   """
   def meta(%{token_id: token_id, method: method, contract: contract, abi: abi}) do
@@ -140,9 +138,9 @@ defmodule EthContract do
               {:error, "Error in decode_data"}
           end
       end
-    else
-      _err -> 
-        {:error, "Error in eth_call" }
+          else
+            _err -> 
+              {:error, "Error in eth_call" }
     end
 
   end
@@ -153,15 +151,15 @@ defmodule EthContract do
 
   ## Examples
 
-      iex> abi = EthContract.parse_abi("test/support/crypto_kitties.json")
-      %{}
+  iex> abi = EthContract.parse_abi("test/support/crypto_kitties.json")
+  %{}
 
   """
   def parse_abi(file_path) do
     case File.read(file_path) do
       {:ok, abi } -> Poison.Parser.parse!(abi)
-                    |> Enum.map(fn x -> {x["name"], x} end)
-                    |> Enum.into(%{})
+      |> Enum.map(fn x -> {x["name"], x} end)
+      |> Enum.into(%{})
       err -> err
     end
   end
@@ -209,7 +207,7 @@ defmodule EthContract do
 
   defp maybe_encode_binary( << data :: binary>>) do
     enc = Base.encode16(data, case: :lower)
-    "0x" <> enc
+                        "0x" <> enc
   end
   defp maybe_encode_binary(data), do: data
 
@@ -252,22 +250,22 @@ defmodule EthContract do
         { map, data } = x
         type = String.to_atom(map["type"])
         decoded = data
-        |> trim_data
-        |> ABI.TypeDecoder.decode_raw([type])
-        |> List.first
-        |> Base.encode16(case: :lower)
+                  |> trim_data
+                  |> ABI.TypeDecoder.decode_raw([type])
+                  |> List.first
+                  |> Base.encode16(case: :lower)
 
-        decoded = case type do
-          :address -> "0x" <> decoded
-        end
+decoded = case type do
+  :address -> "0x" <> decoded
+end
 
-        {map["name"], decoded}
+{map["name"], decoded}
       end)
 
-    indexed_result = res
-                     |> Enum.into(%{})
+      indexed_result = res
+                       |> Enum.into(%{})
 
-    {:ok, Map.merge(indexed_result, non_indexed_result) }
+                       {:ok, Map.merge(indexed_result, non_indexed_result) }
   end
 
   @doc """
