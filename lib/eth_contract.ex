@@ -71,6 +71,25 @@ defmodule EthContract do
   end
 
   @doc """
+  Get the account balance given a wallet address.
+  """
+
+  def account_balance(%{ address: address }) do
+    with {:ok, balance } <- @json_rpc_client.eth_get_balance(address) do
+      balance_wei = 
+        balance 
+        |> String.slice(2..-1)
+        |> Base.decode16!(case: :lower)
+        |> :binary.decode_unsigned
+
+      {:ok, balance_wei }
+    else
+      err ->
+        {:error, err}
+    end
+  end 
+
+  @doc """
   Get the total supply given a contract address. This was tested against ERC20 and ERC721 standard contracts.
 
   ## Examples
