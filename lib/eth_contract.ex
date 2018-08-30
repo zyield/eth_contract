@@ -231,7 +231,6 @@ defmodule EthContract do
     types_signature   = Enum.join(["(", Enum.join(output_types_no_index, ","), ")"])
     output_signature  = "#{method}(#{types_signature})"
 
-    # grab last two topics, first one is the event signature
     [ _ | topics ] = topics
 
     decoded_data = trimmed_data
@@ -249,25 +248,31 @@ defmodule EthContract do
       |> Enum.map(fn x ->
         { map, data } = x
         type = String.to_atom(map["type"])
-        decoded = data
-                  |> trim_data
-                  |> ABI.TypeDecoder.decode_raw([type])
-                  |> List.first
-                  |> Base.encode16(case: :lower)
 
-decoded = case type do
-  :address -> "0x" <> decoded
-end
+        decoded = case type do
+          :address -> 
+            result = data
+                     |> trim_data
+                     |> ABI.TypeDecoder.decode_raw([type])
+                     |> List.first
+                     |> Base.encode16(case: :lower)
+            "0x" <> result
+          :uint256 ->
+            data
+            |> trim_data
+            |> :binary.decode_unsigned
+        end
 
-{map["name"], decoded}
+        {map["name"], decoded}
       end)
 
-      indexed_result = res
-                       |> Enum.into(%{})
+    indexed_result = 
+      res
+      |> Enum.into(%{})
 
-                       {:ok, Map.merge(indexed_result, non_indexed_result) }
+    {:ok, Map.merge(indexed_result, non_indexed_result) }
   end
-
+    
   @doc """
   Decodes events with no indexes.
 

@@ -7,6 +7,38 @@ defmodule EthContractTest do
   end
 
   describe "decode_log/4" do
+    test "it decodes fully indexed Transfer event" do
+      abi = %{
+        "Transfer" => %{
+          "anonymous" => false,
+          "inputs" => [
+            %{
+              "indexed" => true,
+              "name" => "from",
+              "type" => "address"
+            },
+            %{
+              "indexed" => true,
+              "name" => "to",
+              "type" => "address"
+            },
+            %{
+              "indexed" => true,
+              "name" => "tokenId",
+              "type" => "uint256"
+            }
+          ],
+          "name" => "Transfer",
+          "type" => "event"
+        }
+      }
+
+      {:ok, log_data } = EthContract.decode_log("0x", ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "0x000000000000000000000000b7282d0d208f1fc533ba60a4a3dc03adc2aab8e7", "0x0000000000000000000000007192bb75777dab47ef6fbf6f6c0e4bcbb2294f38", "0x000000000000000000000000000000000000000000000000000000000000048f"], abi, "Transfer")
+
+      assert log_data === %{"tokenId" => 1167, "from" => "0xb7282d0d208f1fc533ba60a4a3dc03adc2aab8e7", "to" => "0x7192bb75777dab47ef6fbf6f6c0e4bcbb2294f38"}
+
+    end
+
     test "it decodes coin Transfer event" do
       abi = %{
         "Transfer" => %{
